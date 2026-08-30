@@ -5,19 +5,19 @@ declare(strict_types=1);
 namespace Mixudev\LaravelTimezone\Support;
 
 use DateTimeZone;
-use Throwable;
 
 final class TimezoneValidator
 {
     /**
      * In-memory cache of valid IANA timezone identifiers as a fast hash map.
      *
-     * @var array<string, bool>|null
+     * @var array<string, string>|null
      */
     private static ?array $validTimezones = null;
 
     /**
      * Determine if the given timezone string is a valid IANA timezone identifier.
+     * Guaranteed zero exception throwing for maximum DoS protection.
      */
     public static function isValid(?string $timezone): bool
     {
@@ -25,8 +25,8 @@ final class TimezoneValidator
             return false;
         }
 
-        // Fast length and character sanity check to avoid regex or overhead
-        if (strlen($timezone) > 100 || preg_match('/[^a-zA-Z0-9_\/\+\-\.]/', $timezone)) {
+        // Fast length & ASCII character boundary check (reject immediately if > 64 chars or invalid chars)
+        if (strlen($timezone) > 64 || preg_match('/[^a-zA-Z0-9_\/\+\-\.]/', $timezone)) {
             return false;
         }
 
@@ -36,19 +36,8 @@ final class TimezoneValidator
             return true;
         }
 
-        // Case-insensitive fallback check
         $lower = strtolower($timezone);
-        if (isset(self::$validTimezones[$lower])) {
-            return true;
-        }
-
-        // Fallback to native PHP DateTimeZone constructor
-        try {
-            new DateTimeZone($timezone);
-            return true;
-        } catch (Throwable) {
-            return false;
-        }
+        return isset(self::$validTimezones[$lower]);
     }
 
     /**
@@ -56,16 +45,28 @@ final class TimezoneValidator
      */
     public static function normalize(?string $timezone): ?string
     {
-        if (!self::isValid($timezone)) {
+        if ($timezone === null || $timezone === '') {
             return null;
         }
 
-        try {
-            $tz = new DateTimeZone((string) $timezone);
-            return $tz->getName();
-        } catch (Throwable) {
+        // Handle proxy multi-value header (e.g., "Asia/Jakarta, UTC" -> "Asia/Jakarta")
+        if (str_contains($timezone, ',')) {
+            $parts = explode(',', $timezone, 2);
+            $timezone = trim($parts[0]);
+        }
+
+        if (strlen($timezone) > 64 || preg_match('/[^a-zA-Z0-9_\/\+\-\.]/', $timezone)) {
             return null;
         }
+
+        self::initializeCache();
+
+        if (isset(self::$validTimezones[$timezone])) {
+            return self::$validTimezones[$timezone];
+        }
+
+        $lower = strtolower($timezone);
+        return self::$validTimezones[$lower] ?? null;
     }
 
     /**
@@ -75,11 +76,12 @@ final class TimezoneValidator
      */
     public static function all(): array
     {
-        return DateTimeZone::listIdentifiers();
+        self::initializeCache();
+        return array_values(array_unique(self::$validTimezones ?? []));
     }
 
     /**
-     * Populate internal lookup hash table.
+     * Populate internal lookup hash table including all IANA & backward compatible identifiers.
      */
     private static function initializeCache(): void
     {
@@ -88,14 +90,16 @@ final class TimezoneValidator
         }
 
         self::$validTimezones = [];
-        foreach (DateTimeZone::listIdentifiers() as $tz) {
-            self::$validTimezones[$tz] = true;
-            self::$validTimezones[strtolower($tz)] = true;
+        $identifiers = DateTimeZone::listIdentifiers(DateTimeZone::ALL_WITH_BC);
+
+        foreach ($identifiers as $tz) {
+            self::$validTimezones[$tz] = $tz;
+            self::$validTimezones[strtolower($tz)] = $tz;
         }
 
-        // Include UTC explicitly
-        self::$validTimezones['UTC'] = true;
-        self::$validTimezones['utc'] = true;
+        // Include UTC explicit mappings
+        self::$validTimezones['UTC'] = 'UTC';
+        self::$validTimezones['utc'] = 'UTC';
     }
 
     /**

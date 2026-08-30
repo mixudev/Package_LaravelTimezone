@@ -24,7 +24,7 @@ class CookieTimezoneResolver implements TimezoneResolverInterface
 
         $cookie = $request->cookie($this->cookieName);
 
-        if (!is_string($cookie) || trim($cookie) === '') {
+        if (!is_string($cookie) || trim($cookie) === '' || strlen($cookie) > 64) {
             return null;
         }
 

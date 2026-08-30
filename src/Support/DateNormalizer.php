@@ -14,6 +14,11 @@ use Throwable;
 final class DateNormalizer
 {
     /**
+     * Maximum allowed string length for date parsing to prevent ReDoS / memory exhaustion attacks.
+     */
+    private const MAX_DATE_STRING_LENGTH = 128;
+
+    /**
      * Normalize mixed input into a CarbonInterface instance.
      *
      * @param mixed $date
@@ -50,14 +55,20 @@ final class DateNormalizer
 
         if (is_int($date) || (is_string($date) && ctype_digit($date))) {
             $timestamp = (int) $date;
-            $carbon = CarbonImmutable::createFromTimestamp($timestamp, $fromTimezone ?? 'UTC');
-            return $carbon;
+            return CarbonImmutable::createFromTimestamp($timestamp, $fromTimezone ?? 'UTC');
         }
 
         if (is_string($date)) {
             $trimmed = trim($date);
             if ($trimmed === '') {
                 throw new InvalidArgumentException('Cannot parse empty date string.');
+            }
+
+            // Security guard: prevent ReDoS on huge payload
+            if (strlen($trimmed) > self::MAX_DATE_STRING_LENGTH) {
+                throw new InvalidArgumentException(
+                    sprintf('Date string exceeds maximum allowable length of %d characters.', self::MAX_DATE_STRING_LENGTH)
+                );
             }
 
             try {

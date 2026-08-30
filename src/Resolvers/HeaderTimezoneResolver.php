@@ -24,7 +24,7 @@ class HeaderTimezoneResolver implements TimezoneResolverInterface
 
         $header = $request->header($this->headerName);
 
-        if (!is_string($header) || trim($header) === '') {
+        if (!is_string($header) || trim($header) === '' || strlen($header) > 64) {
             return null;
         }
 
