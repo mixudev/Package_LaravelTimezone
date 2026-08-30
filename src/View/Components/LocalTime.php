@@ -16,6 +16,8 @@ class LocalTime extends Component
     public string $serverFormatted;
     public string $format;
     public ?string $timezone;
+    public bool $live;
+    public bool $isNow;
 
     /**
      * Create a new component instance.
@@ -23,14 +25,18 @@ class LocalTime extends Component
      * @param mixed $date
      * @param string $format
      * @param string|null $timezone
+     * @param bool $live
      */
     public function __construct(
         mixed $date = null,
         string $format = 'datetime',
-        ?string $timezone = null
+        ?string $timezone = null,
+        bool $live = false
     ) {
         $this->format = $format;
         $this->timezone = $timezone;
+        $this->live = $live;
+        $this->isNow = ($date === null);
 
         $carbonUtc = DateNormalizer::convert($date, 'UTC');
         $this->isoUtc = $carbonUtc->toIso8601String();

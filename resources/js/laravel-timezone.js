@@ -13,6 +13,9 @@
     const COOKIE_NAME = 'timezone';
     const STORAGE_KEY = 'laravel_timezone';
 
+    let liveIntervalId = null;
+    const liveElements = [];
+
     const LaravelTimezone = {
         /**
          * Get the user's browser timezone identifier.
@@ -54,13 +57,13 @@
 
         /**
          * Format ISO date string into browser local time string.
-         * @param {string} isoString
+         * @param {string|Date} isoOrDate
          * @param {string} format
          * @returns {string}
          */
-        formatDate: function (isoString, format) {
-            if (!isoString) return '';
-            const date = new Date(isoString);
+        formatDate: function (isoOrDate, format) {
+            if (!isoOrDate) return '';
+            const date = (isoOrDate instanceof Date) ? isoOrDate : new Date(isoOrDate);
             if (isNaN(date.getTime())) return '';
 
             const fmt = (format || 'datetime').toLowerCase();
@@ -93,8 +96,23 @@
                     day: 'numeric',
                     hour: 'numeric',
                     minute: '2-digit',
+                    second: '2-digit',
                     hour12: true
                 }).format(date);
+            }
+
+            // Custom standard patterns
+            if (fmt === 'd/m/y h:i:s' || fmt === 'd/m/y h:i') {
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                const seconds = String(date.getSeconds()).padStart(2, '0');
+
+                return fmt.includes('h:i:s')
+                    ? `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`
+                    : `${day}/${month}/${year} ${hours}:${minutes}`;
             }
 
             // Default: 'datetime'
@@ -146,11 +164,11 @@
 
             for (let i = 0; i < elements.length; i++) {
                 const el = elements[i];
-                if (el.getAttribute('data-local-time-hydrated')) {
-                    continue;
-                }
+                const isLive = el.getAttribute('data-live') === 'true';
+                const isNow = el.getAttribute('data-now') === 'true';
 
-                const iso = el.getAttribute('datetime');
+                // Initial render
+                const iso = isNow ? new Date().toISOString() : el.getAttribute('datetime');
                 const format = el.getAttribute('data-format') || 'datetime';
 
                 if (iso) {
@@ -160,8 +178,45 @@
                     }
                 }
 
+                if (isLive && !el.getAttribute('data-live-active')) {
+                    el.setAttribute('data-live-active', 'true');
+                    liveElements.push(el);
+                }
+
                 el.setAttribute('data-local-time-hydrated', 'true');
             }
+
+            this.startLiveTicker();
+        },
+
+        /**
+         * Start ticker for live elements.
+         */
+        startLiveTicker: function () {
+            if (liveElements.length === 0 || liveIntervalId !== null) {
+                return;
+            }
+
+            const self = this;
+            liveIntervalId = setInterval(function () {
+                const now = new Date();
+                const nowIso = now.toISOString();
+
+                for (let i = 0; i < liveElements.length; i++) {
+                    const el = liveElements[i];
+                    if (!document.body.contains(el)) {
+                        continue;
+                    }
+
+                    const isNow = el.getAttribute('data-now') === 'true';
+                    const format = el.getAttribute('data-format') || 'datetime';
+                    const iso = isNow ? nowIso : el.getAttribute('datetime');
+
+                    if (iso) {
+                        el.textContent = self.formatDate(iso, format);
+                    }
+                }
+            }, 1000);
         },
 
         /**
