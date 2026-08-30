@@ -249,7 +249,7 @@ public function boot(): void
 Untuk memastikan timezone diinisialisasi sebelum kontroler atau middleware lain dijalankan:
 
 ```php
-// Pada bootstrap/app.php (Laravel 11+)
+// Pada bootstrap/app.php (Laravel 11, 12, 13+)
 ->withMiddleware(function (Middleware $middleware) {
     $middleware->append(\Mixudev\LaravelTimezone\Middleware\DetectTimezone::class);
 })

@@ -7,7 +7,7 @@ Halaman ini memandu proses pemasangan package `mixudev/laravel-timezone` pada ap
 ## Persyaratan Sistem
 
 * **PHP:** 8.2 atau versi lebih baru
-* **Laravel Framework:** 10.x, 11.x, atau 12.x
+* **Laravel Framework:** 10.x, 11.x, 12.x, atau 13.x
 * **Ekstensi PHP:** `intl` (direkomendasikan), `date`, `pcre`
 
 ---
