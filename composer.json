@@ -10,6 +10,7 @@
         "browser-timezone",
         "client-timezone"
     ],
+    "homepage": "https://github.com/mixudev/Package_LaravelTimezone",
     "type": "library",
     "license": "MIT",
     "authors": [
@@ -19,6 +20,10 @@
             "role": "Developer"
         }
     ],
+    "support": {
+        "issues": "https://github.com/mixudev/Package_LaravelTimezone/issues",
+        "source": "https://github.com/mixudev/Package_LaravelTimezone"
+    },
     "require": {
         "php": "^8.2",
         "illuminate/console": "^10.0|^11.0|^12.0|^13.0",

@@ -1,7 +1,7 @@
 # Laravel Timezone (`mixudev/laravel-timezone`)
 
 [![Versi Terbaru di Packagist](https://img.shields.io/packagist/v/mixudev/laravel-timezone.svg?style=flat-square)](https://packagist.org/packages/mixudev/laravel-timezone)
-[![Status Pengujian GitHub](https://img.shields.io/github/actions/workflow/status/mixudev/laravel-timezone/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/mixudev/laravel-timezone/actions)
+[![Status Pengujian GitHub](https://img.shields.io/github/actions/workflow/status/mixudev/Package_LaravelTimezone/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/mixudev/Package_LaravelTimezone/actions)
 [![Total Unduhan](https://img.shields.io/packagist/dt/mixudev/laravel-timezone.svg?style=flat-square)](https://packagist.org/packages/mixudev/laravel-timezone)
 [![Lisensi](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 

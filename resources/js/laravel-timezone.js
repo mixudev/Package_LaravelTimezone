@@ -1,6 +1,6 @@
 /**
  * LaravelTimezone Client - Lightweight, Zero-Dependency Browser Timezone Sync & Hydration
- * https://github.com/mixudev/laravel-timezone
+ * https://github.com/mixudev/Package_LaravelTimezone
  */
 (function (window, document) {
     'use strict';
