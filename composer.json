@@ -1,0 +1,66 @@
+{
+    "name": "mixudev/laravel-timezone",
+    "description": "Lightweight, automatic, zero-config timezone resolution and conversion package for Laravel.",
+    "keywords": [
+        "laravel",
+        "timezone",
+        "datetime",
+        "carbon",
+        "localization",
+        "browser-timezone",
+        "client-timezone"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "mixudev",
+            "email": "dev@mixu.id",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "illuminate/console": "^10.0|^11.0|^12.0",
+        "illuminate/contracts": "^10.0|^11.0|^12.0",
+        "illuminate/http": "^10.0|^11.0|^12.0",
+        "illuminate/support": "^10.0|^11.0|^12.0",
+        "illuminate/view": "^10.0|^11.0|^12.0",
+        "nesbot/carbon": "^2.62|^3.0"
+    },
+    "require-dev": {
+        "mockery/mockery": "^1.6",
+        "orchestra/testbench": "^8.0|^9.0|^10.0",
+        "phpstan/phpstan": "^1.12|^2.0",
+        "phpunit/phpunit": "^10.5|^11.0|^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Mixudev\\LaravelTimezone\\": "src/"
+        },
+        "files": [
+            "src/Support/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Mixudev\\LaravelTimezone\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Mixudev\\LaravelTimezone\\TimezoneServiceProvider"
+            ],
+            "aliases": {
+                "Timezone": "Mixudev\\LaravelTimezone\\Facades\\Timezone"
+            }
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {}
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
