@@ -5,7 +5,7 @@
 (function (window, document) {
     'use strict';
 
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
         return;
     }
 
@@ -30,7 +30,7 @@
         },
 
         /**
-         * Sync timezone to cookie and localStorage.
+         * Sync timezone to cookie and localStorage without disturbing other cookies.
          */
         sync: function () {
             const tz = this.get();
@@ -196,13 +196,13 @@
 
                 if (iso) {
                     const formatted = this.formatDate(iso, format);
-                    if (formatted) {
+                    if (formatted && el.textContent !== formatted) {
                         el.textContent = formatted;
                     }
                 }
 
-                if (isLive && !el.getAttribute('data-live-active')) {
-                    el.setAttribute('data-live-active', 'true');
+                if (isLive && !el.hasAttribute('data-live-registered')) {
+                    el.setAttribute('data-live-registered', 'true');
                     liveElements.push(el);
                 }
 
@@ -222,12 +222,19 @@
 
             const self = this;
             liveIntervalId = setInterval(function () {
+                if (liveElements.length === 0) {
+                    clearInterval(liveIntervalId);
+                    liveIntervalId = null;
+                    return;
+                }
+
                 const now = new Date();
                 const nowIso = now.toISOString();
 
-                for (let i = 0; i < liveElements.length; i++) {
+                for (let i = liveElements.length - 1; i >= 0; i--) {
                     const el = liveElements[i];
-                    if (!document.body.contains(el)) {
+                    if (!document.body || !document.body.contains(el)) {
+                        liveElements.splice(i, 1);
                         continue;
                     }
 
@@ -236,51 +243,74 @@
                     const iso = isNow ? nowIso : el.getAttribute('datetime');
 
                     if (iso) {
-                        el.textContent = self.formatDate(iso, format);
+                        const formatted = self.formatDate(iso, format);
+                        if (formatted && el.textContent !== formatted) {
+                            el.textContent = formatted;
+                        }
                     }
                 }
             }, 1000);
         },
 
         /**
-         * Hook into HTTP clients: Fetch, Axios, Inertia, Livewire.
+         * Safe HTTP Client Interceptors (Non-destructive to Request objects / CSRF / Auth Cookies).
          */
         attachInterceptors: function () {
             const tz = this.get();
 
-            // 1. Fetch API Interceptor
+            // 1. Fetch API Interceptor (Safe, non-mutating)
             if (typeof window.fetch === 'function') {
                 const originalFetch = window.fetch;
-                window.fetch = function (resource, init) {
-                    init = init || {};
-                    let headers = new Headers(init.headers || {});
-                    if (!headers.has(HEADER_NAME)) {
-                        headers.set(HEADER_NAME, tz);
-                    }
-                    init.headers = headers;
-                    return originalFetch.call(this, resource, init);
+                window.fetch = function (input, init) {
+                    try {
+                        if (typeof input === 'string' || (typeof URL !== 'undefined' && input instanceof URL)) {
+                            init = init ? Object.assign({}, init) : {};
+                            if (typeof Headers !== 'undefined' && init.headers instanceof Headers) {
+                                if (!init.headers.has(HEADER_NAME)) {
+                                    init.headers.set(HEADER_NAME, tz);
+                                }
+                            } else if (Array.isArray(init.headers)) {
+                                init.headers.push([HEADER_NAME, tz]);
+                            } else {
+                                init.headers = Object.assign({}, init.headers);
+                                if (!init.headers[HEADER_NAME] && !init.headers[HEADER_NAME.toLowerCase()]) {
+                                    init.headers[HEADER_NAME] = tz;
+                                }
+                            }
+                            return originalFetch.call(this, input, init);
+                        } else if (input && typeof input === 'object' && input.headers && typeof input.headers.set === 'function') {
+                            if (!input.headers.has(HEADER_NAME)) {
+                                input.headers.set(HEADER_NAME, tz);
+                            }
+                            return originalFetch.call(this, input, init);
+                        }
+                    } catch (e) {}
+
+                    return originalFetch.call(this, input, init);
                 };
             }
 
             // 2. Axios Interceptor
-            if (typeof window.axios !== 'undefined' && window.axios.defaults) {
-                window.axios.defaults.headers.common[HEADER_NAME] = tz;
+            if (typeof window.axios !== 'undefined' && window.axios.defaults && window.axios.defaults.headers) {
+                if (window.axios.defaults.headers.common) {
+                    window.axios.defaults.headers.common[HEADER_NAME] = tz;
+                }
             }
 
             // 3. Inertia Hook
-            if (document.addEventListener) {
+            if (typeof document !== 'undefined' && document.addEventListener) {
                 document.addEventListener('inertia:start', function (event) {
-                    if (event && event.detail && event.detail.visit && event.detail.visit.headers) {
-                        event.detail.visit.headers[HEADER_NAME] = tz;
-                    }
+                    try {
+                        if (event && event.detail && event.detail.visit && event.detail.visit.headers) {
+                            event.detail.visit.headers[HEADER_NAME] = tz;
+                        }
+                    } catch (e) {}
                 });
 
-                // Auto-hydrate on Inertia page visits
                 document.addEventListener('inertia:finish', function () {
                     LaravelTimezone.hydrate();
                 });
 
-                // Auto-hydrate on Livewire navigations
                 document.addEventListener('livewire:navigated', function () {
                     LaravelTimezone.hydrate();
                 });
@@ -303,19 +333,40 @@
                 this.hydrate();
             }
 
-            // Set up MutationObserver for dynamically added elements
+            // High-performance MutationObserver: strictly ignore text/content mutations to prevent CPU loops
             if (typeof MutationObserver !== 'undefined') {
                 const observer = new MutationObserver(function (mutations) {
+                    let hasNewTimeElements = false;
+
                     for (let i = 0; i < mutations.length; i++) {
-                        if (mutations[i].addedNodes && mutations[i].addedNodes.length > 0) {
-                            LaravelTimezone.hydrate();
-                            break;
+                        const added = mutations[i].addedNodes;
+                        if (!added || added.length === 0) continue;
+
+                        for (let j = 0; j < added.length; j++) {
+                            const node = added[j];
+                            // Only check Element nodes (nodeType === 1), ignore text node ticks completely
+                            if (node.nodeType === 1) {
+                                if (node.tagName === 'TIME' && node.hasAttribute('data-local-time') && !node.hasAttribute('data-local-time-hydrated')) {
+                                    hasNewTimeElements = true;
+                                    break;
+                                }
+                                if (node.querySelector && node.querySelector('time[data-local-time]:not([data-local-time-hydrated])')) {
+                                    hasNewTimeElements = true;
+                                    break;
+                                }
+                            }
                         }
+                        if (hasNewTimeElements) break;
+                    }
+
+                    if (hasNewTimeElements) {
+                        LaravelTimezone.hydrate();
                     }
                 });
 
-                if (document.body) {
-                    observer.observe(document.body, { childList: true, subtree: true });
+                const observeRoot = document.body || document.documentElement;
+                if (observeRoot) {
+                    observer.observe(observeRoot, { childList: true, subtree: true });
                 } else {
                     document.addEventListener('DOMContentLoaded', function () {
                         if (document.body) {
