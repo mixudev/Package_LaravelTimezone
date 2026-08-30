@@ -1,9 +1,3 @@
-@props([
-    'date' => null,
-    'format' => 'datetime',
-    'timezone' => null,
-    'live' => false,
-])
 <time
     data-local-time
     datetime="{{ $isoUtc }}"

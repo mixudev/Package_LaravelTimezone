@@ -46,4 +46,16 @@ class BladeDirectivesAndComponentTest extends TestCase
         $view->assertSee('2026-08-30 17:00:00');
         $view->assertSee('class="local-time font-bold"', false);
     }
+
+    public function test_local_time_component_renders_live_attributes(): void
+    {
+        Timezone::setExplicit('Asia/Jakarta');
+
+        $view = $this->blade('<x-local-time live format="time" />');
+
+        $view->assertSee('data-local-time', false);
+        $view->assertSee('data-live="true"', false);
+        $view->assertSee('data-now="true"', false);
+        $view->assertSee('data-format="time"', false);
+    }
 }

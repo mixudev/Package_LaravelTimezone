@@ -72,21 +72,28 @@
                 return this.formatRelative(date);
             }
 
-            if (fmt === 'date') {
-                return new Intl.DateTimeFormat(undefined, {
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit'
-                }).format(date);
+            if (fmt === 'date' || fmt === 'y-m-d') {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
             }
 
-            if (fmt === 'time') {
-                return new Intl.DateTimeFormat(undefined, {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                    hour12: false
-                }).format(date);
+            if (fmt === 'time' || fmt === 'h:i:s') {
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                const seconds = String(date.getSeconds()).padStart(2, '0');
+                return `${hours}:${minutes}:${seconds}`;
+            }
+
+            if (fmt === 'datetime' || fmt === 'y-m-d h:i:s') {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                const seconds = String(date.getSeconds()).padStart(2, '0');
+                return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
             }
 
             if (fmt === 'human') {
@@ -101,30 +108,46 @@
                 }).format(date);
             }
 
-            // Custom standard patterns
-            if (fmt === 'd/m/y h:i:s' || fmt === 'd/m/y h:i') {
-                const day = String(date.getDate()).padStart(2, '0');
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const year = date.getFullYear();
-                const hours = String(date.getHours()).padStart(2, '0');
-                const minutes = String(date.getMinutes()).padStart(2, '0');
-                const seconds = String(date.getSeconds()).padStart(2, '0');
+            // General PHP date format tokens fallback
+            return this.formatCustomPhp(date, format || 'datetime');
+        },
 
-                return fmt.includes('h:i:s')
-                    ? `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`
-                    : `${day}/${month}/${year} ${hours}:${minutes}`;
-            }
+        /**
+         * Format date according to standard PHP date() format characters.
+         * @param {Date} date
+         * @param {string} pattern
+         * @returns {string}
+         */
+        formatCustomPhp: function (date, pattern) {
+            const monthsShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const monthsLong = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            const daysShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const daysLong = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-            // Default: 'datetime'
-            return new Intl.DateTimeFormat(undefined, {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false
-            }).format(date);
+            const Y = String(date.getFullYear());
+            const y = Y.slice(-2);
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const n = String(date.getMonth() + 1);
+            const M = monthsShort[date.getMonth()];
+            const F = monthsLong[date.getMonth()];
+            const d = String(date.getDate()).padStart(2, '0');
+            const j = String(date.getDate());
+            const D = daysShort[date.getDay()];
+            const l = daysLong[date.getDay()];
+            const H = String(date.getHours()).padStart(2, '0');
+            const G = String(date.getHours());
+            const h = String((date.getHours() % 12) || 12).padStart(2, '0');
+            const g = String((date.getHours() % 12) || 12);
+            const i = String(date.getMinutes()).padStart(2, '0');
+            const s = String(date.getSeconds()).padStart(2, '0');
+            const a = date.getHours() >= 12 ? 'pm' : 'am';
+            const A = date.getHours() >= 12 ? 'PM' : 'AM';
+
+            const map = { Y, y, m, n, M, F, d, j, D, l, H, G, h, g, i, s, a, A };
+
+            return pattern.replace(/[YymnMDFdjDlhGgisaA]/g, function (match) {
+                return map[match] !== undefined ? map[match] : match;
+            });
         },
 
         /**
