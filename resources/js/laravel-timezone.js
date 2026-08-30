@@ -209,6 +209,15 @@
                 el.setAttribute('data-local-time-hydrated', 'true');
             }
 
+            // Hydrate [data-local-timezone] elements
+            const tz = this.get();
+            const tzElements = container.querySelectorAll('[data-local-timezone]');
+            for (let j = 0; j < tzElements.length; j++) {
+                if (tzElements[j].textContent !== tz) {
+                    tzElements[j].textContent = tz;
+                }
+            }
+
             this.startLiveTicker();
         },
 
