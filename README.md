@@ -147,6 +147,11 @@ Gunakan komponen `<x-local-time>` untuk merender elemen HTML `<time>`. Komponen 
 <x-local-time :date="$post->created_at" format="human" class="text-sm text-gray-500" />
 <x-local-time :date="$post->created_at" format="relative" />
 <x-local-time :date="$post->created_at" format="d/m/Y H:i" />
+
+{{-- Live Real-Time Clock (Jam berdetik otomatis setiap detik tanpa refresh) --}}
+<x-local-time live format="time" />
+<x-local-time live format="d/m/Y H:i:s" />
+<x-local-time live format="relative" />
 ```
 
 ### 2. Direktif Blade

@@ -31,6 +31,23 @@ Output HTML yang dihasilkan:
 | `date` | `mixed` | `null` (waktu sekarang) | Mendukung `Carbon`, `CarbonImmutable`, `DateTimeInterface`, string ISO, timestamp Unix. |
 | `format` | `string` | `'datetime'` | Preset (`datetime`, `date`, `time`, `human`, `relative`) atau pola format PHP (`d/m/Y H:i`). |
 | `timezone` | `string|null` | `null` | Menentukan timezone target secara eksplisit (jika ingin mengabaikan timezone aktif). |
+| `live` | `bool` | `false` | Menjadikan jam/waktu berdetik secara real-time setiap detik di browser tanpa refresh. |
+
+### Fitur Live Real-Time Clock (`live`)
+
+Tambahkan atribut `live` untuk menampilkan jam yang berdetik dan berjalan otomatis setiap detik di sisi klien:
+
+```blade
+{{-- Jam realtime berdetik setiap detik --}}
+<x-local-time live format="time" />
+
+{{-- Tanggal dan jam lengkap berjalan realtime --}}
+<x-local-time live format="d/m/Y H:i:s" />
+<x-local-time live format="human" />
+
+{{-- Format relatif yang otomatis diperbarui secara berkala (misal: 1 min ago -> 2 min ago) --}}
+<x-local-time live format="relative" />
+```
 
 ### Contoh Berbagai Format
 
@@ -62,6 +79,7 @@ Output HTML yang dihasilkan:
 ### Mengapa Progressive Enhancement?
 1. **SEO & Server-Side Rendering:** Mesin pencari dan browser tanpa JavaScript langsung menerima tanggal yang terformat rapi dari server (menggunakan fallback timezone server).
 2. **Hidrasi Instan Tanpa Kedip:** Saat JavaScript klien aktif di browser, skrip membaca atribut `datetime` (UTC ISO string) dan langsung memperbarui teks secara lokal sesuai timezone perangkat pengguna tanpa mengirim request AJAX tambahan.
+3. **Real-time Live Ticker:** Jika atribut `live` aktif, skrip JavaScript secara efisien menjalankan ticker interval 1 detik untuk memperbarui tampilan waktu secara halus tanpa me-refresh halaman.
 
 ---
 

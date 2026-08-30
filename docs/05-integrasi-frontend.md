@@ -56,6 +56,7 @@ Saat halaman dimuat, skrip secara otomatis:
    * **Inertia.js:** Mendengarkan event `inertia:start` untuk menyisipkan header pada payload request Inertia, serta mendengarkan `inertia:finish` untuk menghidrasi ulang elemen waktu.
    * **Livewire:** Mendengarkan event `livewire:navigated` untuk merender ulang elemen tanggal secara dinamis.
 4. **Hidrasi DOM Otomatis:** Mencari semua tag `<time data-local-time>` dan mengonversi waktu UTC ISO-8601 ke string waktu lokal perangkat menggunakan `Intl.DateTimeFormat` atau format relatif.
+5. **Live Real-time Ticker:** Memulai interval 1 detik secara otomatis untuk elemen bertanda `data-live="true"` sehingga jam berdetik dan waktu relatif diperbarui secara real-time tanpa me-refresh halaman.
 
 ---
 
